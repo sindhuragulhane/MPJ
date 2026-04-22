@@ -366,6 +366,8 @@ let activeRoomId = "";
 let rooms = [];
 let onlineUsers = [];
 const roomMessages = {};
+let reconnectTimer = null;
+let manualSocketClose = false;
 
 async function api(path, method, body) {
     const response = await fetch(path, {
@@ -386,7 +388,6 @@ async function restoreSession() {
         const data = await me.json();
         if (!me.ok || !data.authenticated) {
             setLoggedOutState();
-            connect();
             return;
         }
 
@@ -395,16 +396,30 @@ async function restoreSession() {
         authNoteEl.textContent = "Logged in as " + currentUser;
     } catch (error) {
         setLoggedOutState();
+        return;
     }
 
     connect();
 }
 
 function connect() {
+    if (!currentUser) {
+        statusEl.innerText = "Login required";
+        return;
+    }
+
+    if (reconnectTimer) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+
     if (socket) {
+        manualSocketClose = true;
         socket.close();
     }
 
+    manualSocketClose = false;
+    statusEl.innerText = "Connecting...";
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     socket = new WebSocket(protocol + "://" + window.location.host + "/ws/chat");
 
@@ -418,6 +433,8 @@ function connect() {
         if (payload.type === "auth_required") {
             setLoggedOutState();
             statusEl.innerText = "Login required";
+            manualSocketClose = true;
+            socket.close();
             return;
         }
 
@@ -474,8 +491,18 @@ function connect() {
     };
 
     socket.onclose = () => {
+        if (manualSocketClose) {
+            manualSocketClose = false;
+            return;
+        }
+
+        if (!currentUser) {
+            statusEl.innerText = "Login required";
+            return;
+        }
+
         statusEl.innerText = "Reconnecting...";
-        window.setTimeout(connect, 1500);
+        reconnectTimer = window.setTimeout(connect, 1500);
     };
 
     socket.onerror = () => {
@@ -488,6 +515,10 @@ function setLoggedOutState() {
     activeRoomId = "";
     rooms = [];
     onlineUsers = [];
+    if (reconnectTimer) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
     Object.keys(roomMessages).forEach((key) => delete roomMessages[key]);
     renderRooms();
     renderOnlineUsers();
@@ -541,13 +572,14 @@ async function logoutUser() {
     }
 
     if (socket) {
+        manualSocketClose = true;
         socket.close();
     }
     usernameEl.value = "";
     passwordEl.value = "";
     authNoteEl.textContent = "You have been logged out.";
     setLoggedOutState();
-    connect();
+    statusEl.innerText = "Login required";
 }
 
 function createRoom() {
