@@ -1,130 +1,395 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Secure Steg Chat</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Steg Secure Chat</title>
 <style>
+:root {
+    --bg: #0b141a;
+    --panel: #111b21;
+    --panel-soft: #202c33;
+    --panel-strong: #182229;
+    --bubble-me: #005c4b;
+    --bubble-other: #202c33;
+    --accent: #25d366;
+    --accent-soft: #103529;
+    --text: #e9edef;
+    --muted: #8696a0;
+    --border: #23313a;
+    --sidebar-width: 360px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
 body {
-    margin:0;
-    font-family:Arial, sans-serif;
-    background:#0b141a;
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background:
+        radial-gradient(circle at top, rgba(37, 211, 102, 0.16), transparent 30%),
+        linear-gradient(180deg, #071015 0%, #0b141a 100%);
+    color: var(--text);
+    min-height: 100vh;
 }
 
-.chat {
-    display:flex;
-    flex-direction:column;
-    height:100vh;
+.app {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    height: 100vh;
 }
 
-.header {
-    background:#202c33;
-    color:white;
-    padding:15px;
-    font-size:18px;
-    display:flex;
-    align-items:center;
-    gap:12px;
-    flex-wrap:wrap;
+.sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
 }
 
-.messages {
-    flex:1;
-    padding:15px;
-    overflow-y:auto;
+.sidebar-top {
+    padding: 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
-.msg {
-    padding:10px;
-    border-radius:10px;
-    margin:8px 0;
-    max-width:60%;
+.brand {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
 }
 
-.me {
-    background:#25d366;
-    margin-left:auto;
-}
-
-.other {
-    background:#202c33;
-    color:white;
-}
-
-.input {
-    display:flex;
-    padding:10px;
-    background:#202c33;
-}
-
-.header input,
-.input input {
-    flex:1;
-    padding:10px;
-    border:none;
-    border-radius:5px;
-}
-
-button {
-    margin-left:10px;
-    padding:10px;
-    background:#25d366;
-    border:none;
-    cursor:pointer;
-    border-radius:5px;
+.brand h1 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
 }
 
 .status {
-    font-size:13px;
-    color:#9fb3c8;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.profile-card,
+.create-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 18px;
+    padding: 14px;
+}
+
+.profile-card h2,
+.create-card h2 {
+    margin: 0 0 10px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+}
+
+.row,
+.create-row {
+    display: flex;
+    gap: 10px;
+}
+
+input,
+select,
+button {
+    font: inherit;
+}
+
+input,
+select {
+    width: 100%;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: var(--panel-soft);
+    color: var(--text);
+    outline: none;
+}
+
+input:focus,
+select:focus {
+    border-color: rgba(37, 211, 102, 0.55);
+}
+
+button {
+    border: none;
+    border-radius: 14px;
+    background: var(--accent);
+    color: #062d22;
+    font-weight: 700;
+    padding: 12px 14px;
+    cursor: pointer;
+}
+
+button.secondary {
+    background: var(--panel-soft);
+    color: var(--text);
+}
+
+.room-list,
+.online-list {
+    padding: 12px;
+    overflow-y: auto;
+}
+
+.room-section-title,
+.online-title {
+    padding: 0 8px 10px;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.room-item {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 8px;
+    background: transparent;
+    color: var(--text);
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.room-item.active {
+    background: rgba(37, 211, 102, 0.15);
+}
+
+.room-meta {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.online-list {
+    border-top: 1px solid var(--border);
+    max-height: 180px;
+}
+
+.online-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 6px 0 0;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: var(--panel-soft);
+    color: var(--text);
+    font-size: 13px;
+}
+
+.online-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+.main {
+    display: flex;
+    flex-direction: column;
+    background:
+        linear-gradient(rgba(11, 20, 26, 0.7), rgba(11, 20, 26, 0.92)),
+        radial-gradient(circle at center, rgba(37, 211, 102, 0.06), transparent 55%);
+}
+
+.chat-top {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(17, 27, 33, 0.82);
+    backdrop-filter: blur(10px);
+}
+
+.chat-top h2 {
+    margin: 0 0 4px;
+    font-size: 20px;
+}
+
+.chat-subtitle {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.message {
+    max-width: min(70%, 560px);
+    padding: 12px 14px 10px;
+    border-radius: 18px;
+    line-height: 1.45;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.message.me {
+    margin-left: auto;
+    background: var(--bubble-me);
+    border-bottom-right-radius: 6px;
+}
+
+.message.other {
+    background: var(--bubble-other);
+    border-bottom-left-radius: 6px;
+}
+
+.message-author {
+    font-size: 12px;
+    font-weight: 700;
+    color: #7ae3ba;
+    margin-bottom: 4px;
+}
+
+.message-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.message-time {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+}
+
+.composer {
+    padding: 18px 22px 22px;
+    border-top: 1px solid var(--border);
+    background: rgba(17, 27, 33, 0.88);
+}
+
+.composer-row {
+    display: flex;
+    gap: 12px;
+}
+
+.composer input {
+    background: var(--panel-soft);
+}
+
+.empty-state {
+    margin: auto;
+    max-width: 380px;
+    text-align: center;
+    color: var(--muted);
+}
+
+@media (max-width: 920px) {
+    .app {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        height: auto;
+    }
+
+    .main {
+        min-height: 65vh;
+    }
+
+    .message {
+        max-width: 88%;
+    }
 }
 </style>
-
 </head>
-
 <body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="sidebar-top">
+            <div class="brand">
+                <h1>Steg Secure</h1>
+                <span class="status" id="status">Connecting...</span>
+            </div>
 
-<div class="chat">
+            <div class="profile-card">
+                <h2>Your Identity</h2>
+                <div class="row">
+                    <input id="username" placeholder="Choose a username">
+                    <button id="claimBtn" type="button">Claim</button>
+                </div>
+            </div>
 
-    <div class="header">
-        <span>Steg Chat</span>
-        <input id="username" placeholder="Enter name">
-        <span class="status" id="status">Connecting...</span>
-    </div>
+            <div class="create-card">
+                <h2>New Chat / Group</h2>
+                <input id="roomName" placeholder="Chat name">
+                <select id="participants" multiple size="4"></select>
+                <div class="create-row">
+                    <button id="createRoomBtn" type="button">Create</button>
+                    <button class="secondary" id="generalBtn" type="button">Community</button>
+                </div>
+            </div>
+        </div>
 
-    <div class="messages" id="messages"></div>
+        <div class="room-list">
+            <div class="room-section-title">Chats</div>
+            <div id="rooms"></div>
+        </div>
 
-    <div class="input">
-        <input id="msg" placeholder="Type message...">
-        <button onclick="send()">Send</button>
-    </div>
+        <div class="online-list">
+            <div class="online-title">Online Users</div>
+            <div id="onlineUsers"></div>
+        </div>
+    </aside>
 
+    <main class="main">
+        <div class="chat-top">
+            <h2 id="roomTitle">Pick a chat</h2>
+            <div class="chat-subtitle" id="roomSubtitle">Claim a username to start secure messaging.</div>
+        </div>
+
+        <div class="messages" id="messages">
+            <div class="empty-state" id="emptyState">
+                Your username is now locked to your socket session, so changing the text box no longer impersonates someone else.
+            </div>
+        </div>
+
+        <div class="composer">
+            <div class="composer-row">
+                <input id="msg" placeholder="Type a secure message..." autocomplete="off">
+                <button id="sendBtn" type="button">Send</button>
+            </div>
+        </div>
+    </main>
 </div>
 
 <script>
-
-const messagesEl = document.getElementById("messages");
 const statusEl = document.getElementById("status");
-const userEl = document.getElementById("username");
+const usernameEl = document.getElementById("username");
+const claimBtn = document.getElementById("claimBtn");
+const roomNameEl = document.getElementById("roomName");
+const participantsEl = document.getElementById("participants");
+const createRoomBtn = document.getElementById("createRoomBtn");
+const generalBtn = document.getElementById("generalBtn");
+const roomsEl = document.getElementById("rooms");
+const onlineUsersEl = document.getElementById("onlineUsers");
+const roomTitleEl = document.getElementById("roomTitle");
+const roomSubtitleEl = document.getElementById("roomSubtitle");
+const messagesEl = document.getElementById("messages");
+const emptyStateEl = document.getElementById("emptyState");
 const msgEl = document.getElementById("msg");
+const sendBtn = document.getElementById("sendBtn");
+
 let socket;
-let chatMessages = [];
-
-function addMessage(message) {
-    const currentUser = userEl.value.trim();
-    const isMe = currentUser && message.user === currentUser;
-    let div = document.createElement("div");
-    div.className = "msg " + (isMe ? "me" : "other");
-    div.innerText = message.user + ": " + message.content;
-
-    messagesEl.appendChild(div);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-}
-
-function renderHistory(messages) {
-    chatMessages = messages.slice();
-    messagesEl.innerHTML = "";
-    messages.forEach(addMessage);
-}
+let currentUser = "";
+let activeRoomId = "";
+let rooms = [];
+let onlineUsers = [];
+const roomMessages = {};
 
 function connect() {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
@@ -137,14 +402,49 @@ function connect() {
     socket.onmessage = (event) => {
         const payload = JSON.parse(event.data);
 
-        if (payload.type === "history" && payload.messages) {
-            renderHistory(payload.messages);
+        if (payload.type === "registered") {
+            currentUser = payload.currentUser || "";
+            usernameEl.value = currentUser;
+            rooms = payload.rooms || [];
+            onlineUsers = payload.onlineUsers || [];
+            renderRooms();
+            renderOnlineUsers();
+            return;
+        }
+
+        if (payload.type === "room_history") {
+            roomMessages[payload.roomId] = payload.messages || [];
+            if (payload.roomId === activeRoomId) {
+                renderMessages();
+            }
+            return;
+        }
+
+        if (payload.type === "room_created" && payload.room) {
+            const existing = rooms.find((room) => room.id === payload.room.id);
+            if (!existing) {
+                rooms.unshift(payload.room);
+            }
+            renderRooms();
+            if (!activeRoomId) {
+                openRoom(payload.room.id);
+            }
             return;
         }
 
         if (payload.type === "message" && payload.message) {
-            chatMessages.push(payload.message);
-            addMessage(payload.message);
+            const roomId = payload.message.roomId;
+            roomMessages[roomId] = roomMessages[roomId] || [];
+            roomMessages[roomId].push(payload.message);
+            if (roomId === activeRoomId) {
+                renderMessages();
+            }
+            return;
+        }
+
+        if (payload.type === "presence") {
+            onlineUsers = payload.onlineUsers || [];
+            renderOnlineUsers();
             return;
         }
 
@@ -163,37 +463,199 @@ function connect() {
     };
 }
 
-function send() {
-    let msg = msgEl.value.trim();
-    let user = userEl.value.trim();
-
-    if(!msg || !user) {
-        alert("Enter username + message");
-        return;
-    }
-
+function sendSocket(data) {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         alert("Chat is still connecting");
+        return false;
+    }
+
+    socket.send(JSON.stringify(data));
+    return true;
+}
+
+function claimUsername() {
+    const username = usernameEl.value.trim();
+    if (!username) {
+        alert("Enter a username");
         return;
     }
 
-    socket.send(JSON.stringify({ user, message: msg }));
-    msgEl.value = "";
+    sendSocket({ action: "register", user: username });
 }
 
+function createRoom() {
+    if (!currentUser) {
+        alert("Claim a username first");
+        return;
+    }
+
+    const roomName = roomNameEl.value.trim();
+    const participants = Array.from(participantsEl.selectedOptions).map((option) => option.value);
+
+    if (!roomName) {
+        alert("Enter a chat name");
+        return;
+    }
+
+    if (participants.length === 0) {
+        alert("Choose at least one participant");
+        return;
+    }
+
+    if (sendSocket({ action: "create_room", roomName, participants })) {
+        roomNameEl.value = "";
+        Array.from(participantsEl.options).forEach((option) => {
+            option.selected = false;
+        });
+    }
+}
+
+function openRoom(roomId) {
+    activeRoomId = roomId;
+    renderRooms();
+    updateHeader();
+    renderMessages();
+    sendSocket({ action: "open_room", roomId });
+}
+
+function sendMessage() {
+    const message = msgEl.value.trim();
+
+    if (!currentUser) {
+        alert("Claim a username first");
+        return;
+    }
+
+    if (!activeRoomId) {
+        alert("Pick a chat first");
+        return;
+    }
+
+    if (!message) {
+        return;
+    }
+
+    if (sendSocket({ action: "send", roomId: activeRoomId, message })) {
+        msgEl.value = "";
+    }
+}
+
+function renderRooms() {
+    roomsEl.innerHTML = "";
+
+    if (!rooms.length) {
+        roomsEl.innerHTML = '<div class="empty-state">No chats yet. Claim a username or create one.</div>';
+        return;
+    }
+
+    rooms.forEach((room) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "room-item" + (room.id === activeRoomId ? " active" : "");
+        button.innerHTML = `
+            <strong>${escapeHtml(room.name)}</strong>
+            <span class="room-meta">${room.type} · ${room.participants.length} members</span>
+        `;
+        button.onclick = () => openRoom(room.id);
+        roomsEl.appendChild(button);
+    });
+}
+
+function renderOnlineUsers() {
+    onlineUsersEl.innerHTML = "";
+    participantsEl.innerHTML = "";
+
+    onlineUsers.forEach((user) => {
+        const pill = document.createElement("span");
+        pill.className = "online-pill";
+        pill.innerHTML = `<span class="online-dot"></span>${escapeHtml(user)}`;
+        onlineUsersEl.appendChild(pill);
+
+        if (user !== currentUser) {
+            const option = document.createElement("option");
+            option.value = user;
+            option.textContent = user;
+            participantsEl.appendChild(option);
+        }
+    });
+}
+
+function renderMessages() {
+    messagesEl.innerHTML = "";
+    const messages = roomMessages[activeRoomId] || [];
+
+    if (!messages.length) {
+        messagesEl.appendChild(emptyStateEl);
+        emptyStateEl.textContent = activeRoomId
+            ? "No messages here yet. Send the first secure message."
+            : "Pick a chat from the left or create a new one.";
+        return;
+    }
+
+    messages.forEach((message) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "message " + (message.user === currentUser ? "me" : "other");
+        wrapper.innerHTML = `
+            <div class="message-author">${escapeHtml(message.user)}</div>
+            <div class="message-text">${escapeHtml(message.content)}</div>
+            <div class="message-time">${formatTimestamp(message.sentAt)}</div>
+        `;
+        messagesEl.appendChild(wrapper);
+    });
+
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function updateHeader() {
+    const room = rooms.find((item) => item.id === activeRoomId);
+    if (!room) {
+        roomTitleEl.textContent = "Pick a chat";
+        roomSubtitleEl.textContent = "Claim a username to start secure messaging.";
+        return;
+    }
+
+    roomTitleEl.textContent = room.name;
+    roomSubtitleEl.textContent = room.participants.join(", ");
+}
+
+function formatTimestamp(value) {
+    if (!value) {
+        return "";
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+claimBtn.addEventListener("click", claimUsername);
+createRoomBtn.addEventListener("click", createRoom);
+generalBtn.addEventListener("click", () => openRoom("general"));
+sendBtn.addEventListener("click", sendMessage);
 msgEl.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
-        send();
+        sendMessage();
     }
 });
-
-userEl.addEventListener("input", () => {
-    renderHistory(chatMessages);
+usernameEl.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        claimUsername();
+    }
 });
 
 connect();
-
 </script>
-
 </body>
 </html>
