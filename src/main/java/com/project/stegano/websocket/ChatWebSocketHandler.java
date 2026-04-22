@@ -5,7 +5,6 @@ import com.project.stegano.model.ChatMessage;
 import com.project.stegano.model.ChatRequest;
 import com.project.stegano.model.ChatRoom;
 import com.project.stegano.model.ChatSocketEvent;
-import com.project.stegano.service.AuthService;
 import com.project.stegano.service.ChatService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -22,7 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ChatWebSocketHandler extends TextWebSocketHandler {
 
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
-    private final Map<String, Set<WebSocketSession>> sessionsByUser = new ConcurrentHashMap<>();
+    private final Map<String, WebSocketSession> sessionsByUser = new ConcurrentHashMap<>();
+    private final Map<String, String> usersBySessionId = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
     private final ChatService chatService;
 
@@ -32,31 +32,21 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(session);
-
-        String username = currentUsername(session);
-        if (username == null) {
-            sendEvent(session, ChatSocketEvent.authRequired());
-            return;
-        }
-
-        addSession(username, session);
-        sendBootstrap(session, username);
-        broadcastPresence();
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         try {
-            String username = requireAuthenticatedUsername(session);
             ChatRequest request = objectMapper.readValue(message.getPayload(), ChatRequest.class);
             String action = request.action() == null ? "" : request.action().trim().toLowerCase();
 
             switch (action) {
-                case "open_room" -> openRoom(session, username, request.roomId());
-                case "create_room" -> createRoom(username, request.roomName(), request.participants());
-                case "send" -> sendChatMessage(username, request.roomId(), request.message());
+                case "register" -> register(session, request.user());
+                case "open_room" -> openRoom(session, request.roomId());
+                case "create_room" -> createRoom(session, request.roomName(), request.participants());
+                case "send" -> sendChatMessage(session, request.roomId(), request.message());
                 default -> sendEvent(session, ChatSocketEvent.error("Unsupported action"));
             }
         } catch (IllegalArgumentException e) {
@@ -69,64 +59,75 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
-        String username = currentUsername(session);
+        String username = usersBySessionId.remove(session.getId());
         if (username != null) {
-            Set<WebSocketSession> userSessions = sessionsByUser.get(username);
-            if (userSessions != null) {
-                userSessions.remove(session);
-                if (userSessions.isEmpty()) {
-                    sessionsByUser.remove(username);
-                }
-            }
+            sessionsByUser.remove(username);
             broadcastPresence();
         }
     }
 
-    private void sendBootstrap(WebSocketSession session, String username) throws Exception {
-        chatService.ensureGeneralRoomFor(username);
-        sendEvent(session, ChatSocketEvent.bootstrap(username, chatService.getRoomsForUser(username), onlineUsers()));
-        openRoom(session, username, ChatService.GENERAL_ROOM_ID);
+    private void register(WebSocketSession session, String username) throws Exception {
+        String cleanUsername = requireUsername(username);
+        WebSocketSession existingSession = sessionsByUser.get(cleanUsername);
+        if (existingSession != null && existingSession.isOpen() && existingSession != session) {
+            throw new IllegalArgumentException("That username is already active");
+        }
+
+        String previous = usersBySessionId.put(session.getId(), cleanUsername);
+        if (previous != null && !previous.equals(cleanUsername)) {
+            sessionsByUser.remove(previous);
+        }
+        sessionsByUser.put(cleanUsername, session);
+        chatService.ensureGeneralRoomFor(cleanUsername);
+
+        sendEvent(session, ChatSocketEvent.registered(cleanUsername, chatService.getRoomsForUser(cleanUsername), onlineUsers()));
+        openRoom(session, ChatService.GENERAL_ROOM_ID);
+        broadcastPresence();
     }
 
-    private void openRoom(WebSocketSession session, String username, String roomId) throws Exception {
+    private void openRoom(WebSocketSession session, String roomId) throws Exception {
+        String username = requireRegisteredUser(session);
         sendEvent(session, ChatSocketEvent.roomHistory(roomId, chatService.getMessagesForRoom(username, roomId)));
     }
 
-    private void createRoom(String username, String roomName, List<String> participants) throws Exception {
+    private void createRoom(WebSocketSession session, String roomName, List<String> participants) throws Exception {
+        String username = requireRegisteredUser(session);
         ChatRoom room = chatService.createRoom(username, roomName, participants);
+
         for (String participant : room.participants()) {
-            for (WebSocketSession participantSession : sessionsByUser.getOrDefault(participant, Set.of())) {
-                sendEventQuietly(participantSession, ChatSocketEvent.roomCreated(room));
+            WebSocketSession participantSession = sessionsByUser.get(participant);
+            if (participantSession != null && participantSession.isOpen()) {
+                sendEvent(participantSession, ChatSocketEvent.roomCreated(room));
             }
         }
     }
 
-    private void sendChatMessage(String username, String roomId, String message) throws Exception {
+    private void sendChatMessage(WebSocketSession session, String roomId, String message) throws Exception {
+        String username = requireRegisteredUser(session);
         ChatMessage savedMessage = chatService.sendMessage(roomId, username, message);
         ChatRoom room = chatService.getRoom(savedMessage.roomId());
 
         for (String participant : room.participants()) {
-            for (WebSocketSession participantSession : sessionsByUser.getOrDefault(participant, Set.of())) {
-                sendEventQuietly(participantSession, ChatSocketEvent.message(savedMessage));
+            WebSocketSession participantSession = sessionsByUser.get(participant);
+            if (participantSession != null && participantSession.isOpen()) {
+                sendEvent(participantSession, ChatSocketEvent.message(savedMessage));
             }
         }
     }
 
-    private String requireAuthenticatedUsername(WebSocketSession session) {
-        String username = currentUsername(session);
+    private String requireRegisteredUser(WebSocketSession session) {
+        String username = usersBySessionId.get(session.getId());
         if (username == null) {
-            throw new IllegalArgumentException("Please log in again");
+            throw new IllegalArgumentException("Register a username first");
         }
         return username;
     }
 
-    private String currentUsername(WebSocketSession session) {
-        Object username = session.getAttributes().get(AuthService.SESSION_USERNAME);
-        return username == null ? null : username.toString();
-    }
-
-    private void addSession(String username, WebSocketSession session) {
-        sessionsByUser.computeIfAbsent(username, ignored -> ConcurrentHashMap.newKeySet()).add(session);
+    private String requireUsername(String username) {
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Enter a username");
+        }
+        return username.trim();
     }
 
     private void broadcastPresence() {
@@ -136,11 +137,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     }
 
     private List<String> onlineUsers() {
-        return sessionsByUser.entrySet().stream()
-                .filter(entry -> !entry.getValue().isEmpty())
-                .map(Map.Entry::getKey)
-                .sorted()
-                .toList();
+        return sessionsByUser.keySet().stream().sorted().toList();
     }
 
     private void sendEventQuietly(WebSocketSession session, ChatSocketEvent event) {
