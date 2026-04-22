@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Receiver</title>
+
+<style>
+body {
+    margin:0;
+    font-family:sans-serif;
+    background:#0b141a;
+}
+
+.chat {
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+.header {
+    background:#202c33;
+    padding:15px;
+    color:white;
+}
+
+.messages {
+    flex:1;
+    padding:20px;
+    overflow-y:auto;
+}
+
+.msg {
+    max-width:60%;
+    margin-bottom:10px;
+    padding:10px;
+    border-radius:10px;
+    background:#202c33;
+    color:white;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="chat">
+
+    <div class="header">📥 Receiver</div>
+
+    <div class="messages" id="messages"></div>
+
+</div>
+
+<script>
+
+let last = "";
+
+function addMessage(text) {
+    let div = document.createElement("div");
+    div.className = "msg";
+    div.innerText = text;
+
+    document.getElementById("messages").appendChild(div);
+}
+
+// auto fetch every 2 sec
+setInterval(async () => {
+
+    let res = await fetch("/get-message");
+    let text = await res.text();
+
+    if(text && text !== last) {
+        addMessage(text);
+        last = text;
+    }
+
+}, 2000);
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+.git
+.gitignore
+.m2repo
+target
+run.log
+run.err.log
+generated

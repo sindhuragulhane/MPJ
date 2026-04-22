@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Secure Steg Chat</title>
+
+<style>
+body {
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#0b141a;
+}
+
+.chat {
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+}
+
+.header {
+    background:#202c33;
+    color:white;
+    padding:15px;
+    font-size:18px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+.messages {
+    flex:1;
+    padding:15px;
+    overflow-y:auto;
+}
+
+.msg {
+    padding:10px;
+    border-radius:10px;
+    margin:8px 0;
+    max-width:60%;
+}
+
+.me {
+    background:#25d366;
+    margin-left:auto;
+}
+
+.other {
+    background:#202c33;
+    color:white;
+}
+
+.input {
+    display:flex;
+    padding:10px;
+    background:#202c33;
+}
+
+.header input,
+.input input {
+    flex:1;
+    padding:10px;
+    border:none;
+    border-radius:5px;
+}
+
+button {
+    margin-left:10px;
+    padding:10px;
+    background:#25d366;
+    border:none;
+    cursor:pointer;
+    border-radius:5px;
+}
+
+.status {
+    font-size:13px;
+    color:#9fb3c8;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="chat">
+
+    <div class="header">
+        <span>Steg Chat</span>
+        <input id="username" placeholder="Enter name">
+        <span class="status" id="status">Connecting...</span>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="input">
+        <input id="msg" placeholder="Type message...">
+        <button onclick="send()">Send</button>
+    </div>
+
+</div>
+
+<script>
+
+const messagesEl = document.getElementById("messages");
+const statusEl = document.getElementById("status");
+const userEl = document.getElementById("username");
+const msgEl = document.getElementById("msg");
+let socket;
+let chatMessages = [];
+
+function addMessage(message) {
+    const currentUser = userEl.value.trim();
+    const isMe = currentUser && message.user === currentUser;
+    let div = document.createElement("div");
+    div.className = "msg " + (isMe ? "me" : "other");
+    div.innerText = message.user + ": " + message.content;
+
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function renderHistory(messages) {
+    chatMessages = messages.slice();
+    messagesEl.innerHTML = "";
+    messages.forEach(addMessage);
+}
+
+function connect() {
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    socket = new WebSocket(protocol + "://" + window.location.host + "/ws/chat");
+
+    socket.onopen = () => {
+        statusEl.innerText = "Live";
+    };
+
+    socket.onmessage = (event) => {
+        const payload = JSON.parse(event.data);
+
+        if (payload.type === "history" && payload.messages) {
+            renderHistory(payload.messages);
+            return;
+        }
+
+        if (payload.type === "message" && payload.message) {
+            chatMessages.push(payload.message);
+            addMessage(payload.message);
+            return;
+        }
+
+        if (payload.type === "error" && payload.error) {
+            alert(payload.error);
+        }
+    };
+
+    socket.onclose = () => {
+        statusEl.innerText = "Reconnecting...";
+        window.setTimeout(connect, 1500);
+    };
+
+    socket.onerror = () => {
+        statusEl.innerText = "Connection issue";
+    };
+}
+
+function send() {
+    let msg = msgEl.value.trim();
+    let user = userEl.value.trim();
+
+    if(!msg || !user) {
+        alert("Enter username + message");
+        return;
+    }
+
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+        alert("Chat is still connecting");
+        return;
+    }
+
+    socket.send(JSON.stringify({ user, message: msg }));
+    msgEl.value = "";
+}
+
+msgEl.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        send();
+    }
+});
+
+userEl.addEventListener("input", () => {
+    renderHistory(chatMessages);
+});
+
+connect();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Sender</title>
+
+<style>
+body {
+    margin:0;
+    font-family:sans-serif;
+    background:#111;
+}
+
+.chat {
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+}
+
+.messages {
+    flex:1;
+    padding:20px;
+    overflow-y:auto;
+}
+
+.msg {
+    max-width:60%;
+    margin-bottom:10px;
+    padding:10px;
+    border-radius:10px;
+}
+
+.you {
+    background:#25d366;
+    margin-left:auto;
+}
+
+.system {
+    background:#333;
+}
+
+.input {
+    display:flex;
+    padding:10px;
+    background:#222;
+}
+
+input {
+    flex:1;
+    padding:10px;
+}
+
+button {
+    margin-left:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="chat">
+    <div class="messages" id="messages"></div>
+
+    <div class="input">
+        <input id="msg" placeholder="Type message...">
+        <button onclick="send()">Send</button>
+    </div>
+</div>
+
+<script>
+
+function addMessage(text, cls) {
+    let div = document.createElement("div");
+    div.className = "msg " + cls;
+    div.innerText = text;
+
+    document.getElementById("messages").appendChild(div);
+}
+
+async function send() {
+    let msg = document.getElementById("msg").value;
+
+    if(!msg) return;
+
+    addMessage(msg, "you");
+
+    await fetch(`/secure-hide?message=${msg}`);
+
+    addMessage("Encrypted & sent 🔐", "system");
+
+    document.getElementById("msg").value="";
+}
+
+</script>
+
+</body>
+</html>
