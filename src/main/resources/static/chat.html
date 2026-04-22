@@ -366,10 +366,7 @@ let activeRoomId = "";
 let rooms = [];
 let onlineUsers = [];
 const roomMessages = {};
-let reconnectTimer = null;
 let manualSocketClose = false;
-let heartbeatTimer = null;
-let heartbeatWatchdog = null;
 
 async function api(path, method, body) {
     const response = await fetch(path, {
@@ -410,11 +407,6 @@ function connect() {
         return;
     }
 
-    if (reconnectTimer) {
-        window.clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-    }
-
     if (socket) {
         manualSocketClose = true;
         socket.close();
@@ -427,7 +419,6 @@ function connect() {
 
     socket.onopen = () => {
         statusEl.innerText = "Live";
-        startHeartbeat();
     };
 
     socket.onmessage = (event) => {
@@ -438,14 +429,6 @@ function connect() {
             statusEl.innerText = "Login required";
             manualSocketClose = true;
             socket.close();
-            return;
-        }
-
-        if (payload.type === "pong") {
-            if (heartbeatWatchdog) {
-                window.clearTimeout(heartbeatWatchdog);
-                heartbeatWatchdog = null;
-            }
             return;
         }
 
@@ -502,7 +485,6 @@ function connect() {
     };
 
     socket.onclose = () => {
-        stopHeartbeat();
         if (manualSocketClose) {
             manualSocketClose = false;
             return;
@@ -513,8 +495,7 @@ function connect() {
             return;
         }
 
-        statusEl.innerText = "Reconnecting...";
-        reconnectTimer = window.setTimeout(connect, 1500);
+        statusEl.innerText = "Disconnected";
     };
 
     socket.onerror = () => {
@@ -522,48 +503,11 @@ function connect() {
     };
 }
 
-function startHeartbeat() {
-    stopHeartbeat();
-    heartbeatTimer = window.setInterval(() => {
-        if (!socket || socket.readyState !== WebSocket.OPEN) {
-            return;
-        }
-
-        socket.send(JSON.stringify({ action: "ping" }));
-
-        if (heartbeatWatchdog) {
-            window.clearTimeout(heartbeatWatchdog);
-        }
-
-        heartbeatWatchdog = window.setTimeout(() => {
-            statusEl.innerText = "Connection timed out";
-            manualSocketClose = false;
-            socket.close();
-        }, 12000);
-    }, 25000);
-}
-
-function stopHeartbeat() {
-    if (heartbeatTimer) {
-        window.clearInterval(heartbeatTimer);
-        heartbeatTimer = null;
-    }
-    if (heartbeatWatchdog) {
-        window.clearTimeout(heartbeatWatchdog);
-        heartbeatWatchdog = null;
-    }
-}
-
 function setLoggedOutState() {
     currentUser = "";
     activeRoomId = "";
     rooms = [];
     onlineUsers = [];
-    stopHeartbeat();
-    if (reconnectTimer) {
-        window.clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-    }
     Object.keys(roomMessages).forEach((key) => delete roomMessages[key]);
     renderRooms();
     renderOnlineUsers();
