@@ -6,6 +6,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
+import jakarta.annotation.PreDestroy;
 import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,8 @@ import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Service
 public class ChatService {
@@ -24,6 +27,7 @@ public class ChatService {
     private final MessageStore messageStore;
     private final BufferedImage inputImage;
     private final Path outputDirectory;
+    private final ExecutorService imageWriterExecutor = Executors.newSingleThreadExecutor();
 
     public ChatService(AESService aesService, SteganoService steganoService, MessageStore messageStore) throws Exception {
         this.aesService = aesService;
@@ -86,10 +90,8 @@ public class ChatService {
         }
 
         String cleanContent = sanitize(content);
-        String encrypted = aesService.encrypt(cleanContent);
         Path outputPath = outputDirectory.resolve("output_" + System.currentTimeMillis() + ".png");
-
-        steganoService.hideMessage(inputImage, outputPath, encrypted);
+        queueImageWrite(cleanContent, outputPath);
 
         ChatMessage chatMessage = new ChatMessage(room.id(), cleanUser, cleanContent, outputPath.toString(), Instant.now().toString());
         messageStore.addMessage(chatMessage);
@@ -155,6 +157,22 @@ public class ChatService {
         }
 
         return trimmed;
+    }
+
+    private void queueImageWrite(String message, Path outputPath) {
+        imageWriterExecutor.submit(() -> {
+            try {
+                String encrypted = aesService.encrypt(message);
+                steganoService.hideMessage(inputImage, outputPath, encrypted);
+            } catch (Exception ignored) {
+                // Keep chat delivery fast even if background image generation fails.
+            }
+        });
+    }
+
+    @PreDestroy
+    public void shutdownExecutor() {
+        imageWriterExecutor.shutdown();
     }
 
     private BufferedImage loadInputImage() throws Exception {
