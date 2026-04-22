@@ -17,18 +17,17 @@
     --text: #e9edef;
     --muted: #8696a0;
     --border: #23313a;
-    --sidebar-width: 360px;
+    --sidebar-width: 370px;
+    --danger: #ff6b6b;
 }
 
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
     font-family: "Segoe UI", Arial, sans-serif;
     background:
-        radial-gradient(circle at top, rgba(37, 211, 102, 0.16), transparent 30%),
+        radial-gradient(circle at top, rgba(37, 211, 102, 0.14), transparent 30%),
         linear-gradient(180deg, #071015 0%, #0b141a 100%);
     color: var(--text);
     min-height: 100vh;
@@ -73,16 +72,14 @@ body {
     color: var(--muted);
 }
 
-.profile-card,
-.create-card {
+.panel-card {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 18px;
     padding: 14px;
 }
 
-.profile-card h2,
-.create-card h2 {
+.panel-card h2 {
     margin: 0 0 10px;
     font-size: 13px;
     text-transform: uppercase;
@@ -90,20 +87,12 @@ body {
     color: var(--muted);
 }
 
-.row,
-.create-row {
-    display: flex;
-    gap: 10px;
-}
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; gap: 10px; }
 
-input,
-select,
-button {
-    font: inherit;
-}
+input, select, button { font: inherit; }
 
-input,
-select {
+input, select {
     width: 100%;
     border: 1px solid transparent;
     border-radius: 14px;
@@ -113,10 +102,7 @@ select {
     outline: none;
 }
 
-input:focus,
-select:focus {
-    border-color: rgba(37, 211, 102, 0.55);
-}
+input:focus, select:focus { border-color: rgba(37, 211, 102, 0.55); }
 
 button {
     border: none;
@@ -133,14 +119,19 @@ button.secondary {
     color: var(--text);
 }
 
-.room-list,
-.online-list {
-    padding: 12px;
-    overflow-y: auto;
+button.danger {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ffd9d9;
 }
 
-.room-section-title,
-.online-title {
+.auth-note, .security-note {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.room-list, .online-list { padding: 12px; overflow-y: auto; }
+.room-section-title, .online-title {
     padding: 0 8px 10px;
     font-size: 12px;
     color: var(--muted);
@@ -159,20 +150,15 @@ button.secondary {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+    text-align: left;
 }
 
-.room-item.active {
-    background: rgba(37, 211, 102, 0.15);
-}
-
-.room-meta {
-    font-size: 12px;
-    color: var(--muted);
-}
+.room-item.active { background: rgba(37, 211, 102, 0.15); }
+.room-meta { font-size: 12px; color: var(--muted); }
 
 .online-list {
     border-top: 1px solid var(--border);
-    max-height: 180px;
+    max-height: 170px;
 }
 
 .online-pill {
@@ -198,8 +184,8 @@ button.secondary {
     display: flex;
     flex-direction: column;
     background:
-        linear-gradient(rgba(11, 20, 26, 0.7), rgba(11, 20, 26, 0.92)),
-        radial-gradient(circle at center, rgba(37, 211, 102, 0.06), transparent 55%);
+        linear-gradient(rgba(11, 20, 26, 0.72), rgba(11, 20, 26, 0.92)),
+        radial-gradient(circle at center, rgba(37, 211, 102, 0.05), transparent 55%);
 }
 
 .chat-top {
@@ -209,15 +195,8 @@ button.secondary {
     backdrop-filter: blur(10px);
 }
 
-.chat-top h2 {
-    margin: 0 0 4px;
-    font-size: 20px;
-}
-
-.chat-subtitle {
-    color: var(--muted);
-    font-size: 13px;
-}
+.chat-top h2 { margin: 0 0 4px; font-size: 20px; }
+.chat-subtitle { color: var(--muted); font-size: 13px; }
 
 .messages {
     flex: 1;
@@ -272,38 +251,20 @@ button.secondary {
     background: rgba(17, 27, 33, 0.88);
 }
 
-.composer-row {
-    display: flex;
-    gap: 12px;
-}
-
-.composer input {
-    background: var(--panel-soft);
-}
+.composer-row { display: flex; gap: 12px; }
+.composer input { background: var(--panel-soft); }
 
 .empty-state {
     margin: auto;
-    max-width: 380px;
+    max-width: 420px;
     text-align: center;
     color: var(--muted);
 }
 
 @media (max-width: 920px) {
-    .app {
-        grid-template-columns: 1fr;
-    }
-
-    .sidebar {
-        height: auto;
-    }
-
-    .main {
-        min-height: 65vh;
-    }
-
-    .message {
-        max-width: 88%;
-    }
+    .app { grid-template-columns: 1fr; }
+    .main { min-height: 65vh; }
+    .message { max-width: 88%; }
 }
 </style>
 </head>
@@ -316,21 +277,32 @@ button.secondary {
                 <span class="status" id="status">Connecting...</span>
             </div>
 
-            <div class="profile-card">
-                <h2>Your Identity</h2>
-                <div class="row">
-                    <input id="username" placeholder="Choose a username">
-                    <button id="claimBtn" type="button">Claim</button>
+            <div class="panel-card">
+                <h2>Account</h2>
+                <div class="stack">
+                    <input id="username" placeholder="Username">
+                    <input id="password" type="password" placeholder="Password">
+                    <div class="row">
+                        <button id="loginBtn" type="button">Login</button>
+                        <button id="registerBtn" type="button" class="secondary">Register</button>
+                    </div>
+                    <div class="row">
+                        <button id="logoutBtn" type="button" class="danger">Logout</button>
+                    </div>
+                    <div class="auth-note" id="authNote">Create an account, then log in. Your session owns your identity.</div>
                 </div>
             </div>
 
-            <div class="create-card">
+            <div class="panel-card">
                 <h2>New Chat / Group</h2>
-                <input id="roomName" placeholder="Chat name">
-                <select id="participants" multiple size="4"></select>
-                <div class="create-row">
-                    <button id="createRoomBtn" type="button">Create</button>
-                    <button class="secondary" id="generalBtn" type="button">Community</button>
+                <div class="stack">
+                    <input id="roomName" placeholder="Chat name">
+                    <select id="participants" multiple size="4"></select>
+                    <div class="row">
+                        <button id="createRoomBtn" type="button">Create</button>
+                        <button class="secondary" id="generalBtn" type="button">Community</button>
+                    </div>
+                    <div class="security-note">Only members can open a room or send into it. Messages are rate-limited and stored encrypted.</div>
                 </div>
             </div>
         </div>
@@ -348,13 +320,13 @@ button.secondary {
 
     <main class="main">
         <div class="chat-top">
-            <h2 id="roomTitle">Pick a chat</h2>
-            <div class="chat-subtitle" id="roomSubtitle">Claim a username to start secure messaging.</div>
+            <h2 id="roomTitle">Secure rooms</h2>
+            <div class="chat-subtitle" id="roomSubtitle">Log in to load your chats and real-time updates.</div>
         </div>
 
         <div class="messages" id="messages">
             <div class="empty-state" id="emptyState">
-                Your username is now locked to your socket session, so changing the text box no longer impersonates someone else.
+                This build now uses account sessions, encrypted message storage, room membership checks, and rate limiting.
             </div>
         </div>
 
@@ -370,7 +342,11 @@ button.secondary {
 <script>
 const statusEl = document.getElementById("status");
 const usernameEl = document.getElementById("username");
-const claimBtn = document.getElementById("claimBtn");
+const passwordEl = document.getElementById("password");
+const loginBtn = document.getElementById("loginBtn");
+const registerBtn = document.getElementById("registerBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const authNoteEl = document.getElementById("authNote");
 const roomNameEl = document.getElementById("roomName");
 const participantsEl = document.getElementById("participants");
 const createRoomBtn = document.getElementById("createRoomBtn");
@@ -391,7 +367,44 @@ let rooms = [];
 let onlineUsers = [];
 const roomMessages = {};
 
+async function api(path, method, body) {
+    const response = await fetch(path, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || "Request failed");
+    }
+    return data;
+}
+
+async function restoreSession() {
+    try {
+        const me = await fetch("/api/auth/me");
+        const data = await me.json();
+        if (!me.ok || !data.authenticated) {
+            setLoggedOutState();
+            connect();
+            return;
+        }
+
+        currentUser = data.username;
+        usernameEl.value = currentUser;
+        authNoteEl.textContent = "Logged in as " + currentUser;
+    } catch (error) {
+        setLoggedOutState();
+    }
+
+    connect();
+}
+
 function connect() {
+    if (socket) {
+        socket.close();
+    }
+
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     socket = new WebSocket(protocol + "://" + window.location.host + "/ws/chat");
 
@@ -402,11 +415,18 @@ function connect() {
     socket.onmessage = (event) => {
         const payload = JSON.parse(event.data);
 
-        if (payload.type === "registered") {
+        if (payload.type === "auth_required") {
+            setLoggedOutState();
+            statusEl.innerText = "Login required";
+            return;
+        }
+
+        if (payload.type === "bootstrap") {
             currentUser = payload.currentUser || "";
             usernameEl.value = currentUser;
             rooms = payload.rooms || [];
             onlineUsers = payload.onlineUsers || [];
+            authNoteEl.textContent = "Logged in as " + currentUser;
             renderRooms();
             renderOnlineUsers();
             return;
@@ -463,6 +483,18 @@ function connect() {
     };
 }
 
+function setLoggedOutState() {
+    currentUser = "";
+    activeRoomId = "";
+    rooms = [];
+    onlineUsers = [];
+    Object.keys(roomMessages).forEach((key) => delete roomMessages[key]);
+    renderRooms();
+    renderOnlineUsers();
+    renderMessages();
+    updateHeader();
+}
+
 function sendSocket(data) {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         alert("Chat is still connecting");
@@ -473,19 +505,54 @@ function sendSocket(data) {
     return true;
 }
 
-function claimUsername() {
-    const username = usernameEl.value.trim();
-    if (!username) {
-        alert("Enter a username");
-        return;
+async function registerUser() {
+    try {
+        const data = await api("/api/auth/register", "POST", {
+            username: usernameEl.value.trim(),
+            password: passwordEl.value
+        });
+        authNoteEl.textContent = "Account created for " + data.username + ". Now log in.";
+        passwordEl.value = "";
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function loginUser() {
+    try {
+        const data = await api("/api/auth/login", "POST", {
+            username: usernameEl.value.trim(),
+            password: passwordEl.value
+        });
+        currentUser = data.username;
+        passwordEl.value = "";
+        authNoteEl.textContent = "Logged in as " + currentUser;
+        connect();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function logoutUser() {
+    try {
+        await api("/api/auth/logout", "POST");
+    } catch (error) {
+        alert(error.message);
     }
 
-    sendSocket({ action: "register", user: username });
+    if (socket) {
+        socket.close();
+    }
+    usernameEl.value = "";
+    passwordEl.value = "";
+    authNoteEl.textContent = "You have been logged out.";
+    setLoggedOutState();
+    connect();
 }
 
 function createRoom() {
     if (!currentUser) {
-        alert("Claim a username first");
+        alert("Log in first");
         return;
     }
 
@@ -511,6 +578,11 @@ function createRoom() {
 }
 
 function openRoom(roomId) {
+    if (!currentUser) {
+        alert("Log in first");
+        return;
+    }
+
     activeRoomId = roomId;
     renderRooms();
     updateHeader();
@@ -522,7 +594,7 @@ function sendMessage() {
     const message = msgEl.value.trim();
 
     if (!currentUser) {
-        alert("Claim a username first");
+        alert("Log in first");
         return;
     }
 
@@ -544,7 +616,7 @@ function renderRooms() {
     roomsEl.innerHTML = "";
 
     if (!rooms.length) {
-        roomsEl.innerHTML = '<div class="empty-state">No chats yet. Claim a username or create one.</div>';
+        roomsEl.innerHTML = '<div class="empty-state">No chats loaded yet.</div>';
         return;
     }
 
@@ -588,7 +660,7 @@ function renderMessages() {
         messagesEl.appendChild(emptyStateEl);
         emptyStateEl.textContent = activeRoomId
             ? "No messages here yet. Send the first secure message."
-            : "Pick a chat from the left or create a new one.";
+            : "Log in and pick a chat from the left.";
         return;
     }
 
@@ -609,8 +681,10 @@ function renderMessages() {
 function updateHeader() {
     const room = rooms.find((item) => item.id === activeRoomId);
     if (!room) {
-        roomTitleEl.textContent = "Pick a chat";
-        roomSubtitleEl.textContent = "Claim a username to start secure messaging.";
+        roomTitleEl.textContent = "Secure rooms";
+        roomSubtitleEl.textContent = currentUser
+            ? "Choose one of your chats or create a new group."
+            : "Log in to load your chats and real-time updates.";
         return;
     }
 
@@ -622,12 +696,10 @@ function formatTimestamp(value) {
     if (!value) {
         return "";
     }
-
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
         return value;
     }
-
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
@@ -640,7 +712,9 @@ function escapeHtml(value) {
         .replaceAll("'", "&#39;");
 }
 
-claimBtn.addEventListener("click", claimUsername);
+loginBtn.addEventListener("click", loginUser);
+registerBtn.addEventListener("click", registerUser);
+logoutBtn.addEventListener("click", logoutUser);
 createRoomBtn.addEventListener("click", createRoom);
 generalBtn.addEventListener("click", () => openRoom("general"));
 sendBtn.addEventListener("click", sendMessage);
@@ -649,13 +723,13 @@ msgEl.addEventListener("keydown", (event) => {
         sendMessage();
     }
 });
-usernameEl.addEventListener("keydown", (event) => {
+passwordEl.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
-        claimUsername();
+        loginUser();
     }
 });
 
-connect();
+restoreSession();
 </script>
 </body>
 </html>
