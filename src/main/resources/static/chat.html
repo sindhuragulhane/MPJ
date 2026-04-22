@@ -366,6 +366,7 @@ let activeRoomId = "";
 let rooms = [];
 let onlineUsers = [];
 const roomMessages = {};
+let reconnectTimer = null;
 let manualSocketClose = false;
 
 async function api(path, method, body) {
@@ -405,6 +406,11 @@ function connect() {
     if (!currentUser) {
         statusEl.innerText = "Login required";
         return;
+    }
+
+    if (reconnectTimer) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
     }
 
     if (socket) {
@@ -495,7 +501,8 @@ function connect() {
             return;
         }
 
-        statusEl.innerText = "Disconnected";
+        statusEl.innerText = "Reconnecting...";
+        reconnectTimer = window.setTimeout(connect, 1500);
     };
 
     socket.onerror = () => {
@@ -508,6 +515,10 @@ function setLoggedOutState() {
     activeRoomId = "";
     rooms = [];
     onlineUsers = [];
+    if (reconnectTimer) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
     Object.keys(roomMessages).forEach((key) => delete roomMessages[key]);
     renderRooms();
     renderOnlineUsers();
