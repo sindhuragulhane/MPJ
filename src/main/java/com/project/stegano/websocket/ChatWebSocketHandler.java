@@ -54,6 +54,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             String action = request.action() == null ? "" : request.action().trim().toLowerCase();
 
             switch (action) {
+                case "ping" -> sendEvent(session, ChatSocketEvent.pong());
                 case "open_room" -> openRoom(session, username, request.roomId());
                 case "create_room" -> createRoom(username, request.roomName(), request.participants());
                 case "send" -> sendChatMessage(username, request.roomId(), request.message());

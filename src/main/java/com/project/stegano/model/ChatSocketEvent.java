@@ -33,6 +33,10 @@ public record ChatSocketEvent(
         return new ChatSocketEvent("presence", null, null, null, null, null, null, onlineUsers, null);
     }
 
+    public static ChatSocketEvent pong() {
+        return new ChatSocketEvent("pong", null, null, null, null, null, null, null, null);
+    }
+
     public static ChatSocketEvent authRequired() {
         return new ChatSocketEvent("auth_required", null, null, null, null, null, null, null, null);
     }
