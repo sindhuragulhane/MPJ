@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -78,6 +79,32 @@ public class ChatService {
         String roomId = "room-" + UUID.randomUUID().toString().substring(0, 8);
         String type = members.size() == 2 ? "direct" : "group";
         ChatRoom room = new ChatRoom(roomId, cleanRoomName, type, members, cleanCreator, Instant.now().toString());
+        messageStore.saveRoom(room);
+        return room;
+    }
+
+    public ChatRoom createOrGetDirectRoom(String requester, String targetUser) {
+        String cleanRequester = sanitize(requester);
+        String cleanTarget = sanitize(targetUser);
+        if (cleanRequester.equals(cleanTarget)) {
+            throw new IllegalArgumentException("Choose a different user");
+        }
+
+        List<String> pair = mergeParticipants(List.of(cleanRequester, cleanTarget), List.of());
+        String directId = directRoomId(pair.get(0), pair.get(1));
+        ChatRoom existing = messageStore.getRoom(directId);
+        if (existing != null) {
+            return existing;
+        }
+
+        ChatRoom room = new ChatRoom(
+                directId,
+                cleanTarget,
+                "direct",
+                pair,
+                cleanRequester,
+                Instant.now().toString()
+        );
         messageStore.saveRoom(room);
         return room;
     }
@@ -157,6 +184,14 @@ public class ChatService {
         }
 
         return trimmed;
+    }
+
+    private String directRoomId(String left, String right) {
+        String normalizedLeft = left.toLowerCase(Locale.ROOT);
+        String normalizedRight = right.toLowerCase(Locale.ROOT);
+        return normalizedLeft.compareTo(normalizedRight) <= 0
+                ? "dm-" + normalizedLeft + "-" + normalizedRight
+                : "dm-" + normalizedRight + "-" + normalizedLeft;
     }
 
     private void queueImageWrite(String message, Path outputPath) {

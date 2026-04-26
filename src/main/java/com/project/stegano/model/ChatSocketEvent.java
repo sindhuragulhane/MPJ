@@ -13,8 +13,8 @@ public record ChatSocketEvent(
         List<String> onlineUsers,
         String error
 ) {
-    public static ChatSocketEvent registered(String currentUser, List<ChatRoom> rooms, List<String> onlineUsers) {
-        return new ChatSocketEvent("registered", currentUser, null, null, rooms, null, null, onlineUsers, null);
+    public static ChatSocketEvent bootstrap(String currentUser, List<ChatRoom> rooms, List<String> onlineUsers) {
+        return new ChatSocketEvent("bootstrap", currentUser, null, null, rooms, null, null, onlineUsers, null);
     }
 
     public static ChatSocketEvent roomHistory(String roomId, List<ChatMessage> messages) {
@@ -31,6 +31,10 @@ public record ChatSocketEvent(
 
     public static ChatSocketEvent presence(List<String> onlineUsers) {
         return new ChatSocketEvent("presence", null, null, null, null, null, null, onlineUsers, null);
+    }
+
+    public static ChatSocketEvent authRequired() {
+        return new ChatSocketEvent("auth_required", null, null, null, null, null, null, null, null);
     }
 
     public static ChatSocketEvent error(String error) {

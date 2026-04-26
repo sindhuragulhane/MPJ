@@ -4,9 +4,9 @@ import java.util.List;
 
 public record ChatRequest(
         String action,
-        String user,
         String roomId,
         String roomName,
+        String targetUser,
         List<String> participants,
         String message
 ) {

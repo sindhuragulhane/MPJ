@@ -9,7 +9,6 @@
     --bg: #0b141a;
     --panel: #111b21;
     --panel-soft: #202c33;
-    --panel-strong: #182229;
     --bubble-me: #005c4b;
     --bubble-other: #202c33;
     --accent: #25d366;
@@ -17,12 +16,11 @@
     --text: #e9edef;
     --muted: #8696a0;
     --border: #23313a;
+    --danger: #ff6b6b;
     --sidebar-width: 360px;
 }
 
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
@@ -59,7 +57,6 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
 }
 
 .brand h1 {
@@ -73,16 +70,14 @@ body {
     color: var(--muted);
 }
 
-.profile-card,
-.create-card {
+.card {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 18px;
     padding: 14px;
 }
 
-.profile-card h2,
-.create-card h2 {
+.card h2 {
     margin: 0 0 10px;
     font-size: 13px;
     text-transform: uppercase;
@@ -90,20 +85,12 @@ body {
     color: var(--muted);
 }
 
-.row,
-.create-row {
-    display: flex;
-    gap: 10px;
-}
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; gap: 10px; }
 
-input,
-select,
-button {
-    font: inherit;
-}
+input, select, button { font: inherit; }
 
-input,
-select {
+input, select {
     width: 100%;
     border: 1px solid transparent;
     border-radius: 14px;
@@ -113,8 +100,7 @@ select {
     outline: none;
 }
 
-input:focus,
-select:focus {
+input:focus, select:focus {
     border-color: rgba(37, 211, 102, 0.55);
 }
 
@@ -133,14 +119,17 @@ button.secondary {
     color: var(--text);
 }
 
-.room-list,
-.online-list {
+button.danger {
+    background: rgba(255, 107, 107, 0.18);
+    color: #ffd9d9;
+}
+
+.room-list, .online-list {
     padding: 12px;
     overflow-y: auto;
 }
 
-.room-section-title,
-.online-title {
+.room-section-title, .online-title {
     padding: 0 8px 10px;
     font-size: 12px;
     color: var(--muted);
@@ -148,7 +137,7 @@ button.secondary {
     letter-spacing: 0.08em;
 }
 
-.room-item {
+.room-item, .online-item {
     width: 100%;
     padding: 14px;
     margin-bottom: 8px;
@@ -159,9 +148,10 @@ button.secondary {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+    text-align: left;
 }
 
-.room-item.active {
+.room-item.active, .online-item:hover {
     background: rgba(37, 211, 102, 0.15);
 }
 
@@ -170,28 +160,18 @@ button.secondary {
     color: var(--muted);
 }
 
-.online-list {
-    border-top: 1px solid var(--border);
-    max-height: 180px;
-}
-
-.online-pill {
-    display: inline-flex;
+.online-item {
+    flex-direction: row;
     align-items: center;
-    gap: 8px;
-    margin: 6px 6px 0 0;
-    padding: 8px 12px;
-    border-radius: 999px;
-    background: var(--panel-soft);
-    color: var(--text);
-    font-size: 13px;
+    gap: 10px;
 }
 
 .online-dot {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: var(--accent);
+    flex: 0 0 auto;
 }
 
 .main {
@@ -288,22 +268,16 @@ button.secondary {
     color: var(--muted);
 }
 
+.note {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
 @media (max-width: 920px) {
-    .app {
-        grid-template-columns: 1fr;
-    }
-
-    .sidebar {
-        height: auto;
-    }
-
-    .main {
-        min-height: 65vh;
-    }
-
-    .message {
-        max-width: 88%;
-    }
+    .app { grid-template-columns: 1fr; }
+    .main { min-height: 65vh; }
+    .message { max-width: 88%; }
 }
 </style>
 </head>
@@ -313,24 +287,32 @@ button.secondary {
         <div class="sidebar-top">
             <div class="brand">
                 <h1>Steg Secure</h1>
-                <span class="status" id="status">Connecting...</span>
+                <span class="status" id="status">Checking session...</span>
             </div>
 
-            <div class="profile-card">
-                <h2>Your Identity</h2>
-                <div class="row">
-                    <input id="username" placeholder="Choose a username">
-                    <button id="claimBtn" type="button">Claim</button>
+            <div class="card">
+                <h2>Account</h2>
+                <div class="stack">
+                    <input id="username" placeholder="Username">
+                    <input id="password" type="password" placeholder="Password">
+                    <div class="row">
+                        <button id="loginBtn" type="button">Login</button>
+                        <button id="registerBtn" type="button" class="secondary">Register</button>
+                    </div>
+                    <button id="logoutBtn" type="button" class="danger">Logout</button>
+                    <div class="note" id="authNote">Log in once, then click any live user to start chatting.</div>
                 </div>
             </div>
 
-            <div class="create-card">
-                <h2>New Chat / Group</h2>
-                <input id="roomName" placeholder="Chat name">
-                <select id="participants" multiple size="4"></select>
-                <div class="create-row">
-                    <button id="createRoomBtn" type="button">Create</button>
-                    <button class="secondary" id="generalBtn" type="button">Community</button>
+            <div class="card">
+                <h2>New Group</h2>
+                <div class="stack">
+                    <input id="roomName" placeholder="Group name">
+                    <select id="participants" multiple size="4"></select>
+                    <div class="row">
+                        <button id="createRoomBtn" type="button">Create</button>
+                        <button class="secondary" id="generalBtn" type="button">Community</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -341,21 +323,19 @@ button.secondary {
         </div>
 
         <div class="online-list">
-            <div class="online-title">Online Users</div>
+            <div class="online-title">Live Users</div>
             <div id="onlineUsers"></div>
         </div>
     </aside>
 
     <main class="main">
         <div class="chat-top">
-            <h2 id="roomTitle">Pick a chat</h2>
-            <div class="chat-subtitle" id="roomSubtitle">Claim a username to start secure messaging.</div>
+            <h2 id="roomTitle">Choose a chat</h2>
+            <div class="chat-subtitle" id="roomSubtitle">Click a live user to open a direct chat, or create a group.</div>
         </div>
 
         <div class="messages" id="messages">
-            <div class="empty-state" id="emptyState">
-                Your username is now locked to your socket session, so changing the text box no longer impersonates someone else.
-            </div>
+            <div class="empty-state" id="emptyState">Log in and click any live user to open a direct chat instantly.</div>
         </div>
 
         <div class="composer">
@@ -370,7 +350,11 @@ button.secondary {
 <script>
 const statusEl = document.getElementById("status");
 const usernameEl = document.getElementById("username");
-const claimBtn = document.getElementById("claimBtn");
+const passwordEl = document.getElementById("password");
+const loginBtn = document.getElementById("loginBtn");
+const registerBtn = document.getElementById("registerBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const authNoteEl = document.getElementById("authNote");
 const roomNameEl = document.getElementById("roomName");
 const participantsEl = document.getElementById("participants");
 const createRoomBtn = document.getElementById("createRoomBtn");
@@ -390,8 +374,58 @@ let activeRoomId = "";
 let rooms = [];
 let onlineUsers = [];
 const roomMessages = {};
+let reconnectTimer = null;
+let manualSocketClose = false;
+let pendingDirectUser = "";
+
+async function api(path, method, body) {
+    const response = await fetch(path, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || "Request failed");
+    }
+    return data;
+}
+
+async function restoreSession() {
+    try {
+        const response = await fetch("/api/auth/me");
+        const data = await response.json();
+        if (!response.ok || !data.authenticated) {
+            setLoggedOutState();
+            return;
+        }
+
+        currentUser = data.username;
+        usernameEl.value = currentUser;
+        authNoteEl.textContent = "Logged in as " + currentUser;
+        connect();
+    } catch (error) {
+        setLoggedOutState();
+    }
+}
 
 function connect() {
+    if (!currentUser) {
+        statusEl.innerText = "Login required";
+        return;
+    }
+
+    if (reconnectTimer) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+
+    if (socket) {
+        manualSocketClose = true;
+        socket.close();
+    }
+
+    statusEl.innerText = "Connecting...";
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     socket = new WebSocket(protocol + "://" + window.location.host + "/ws/chat");
 
@@ -402,11 +436,17 @@ function connect() {
     socket.onmessage = (event) => {
         const payload = JSON.parse(event.data);
 
-        if (payload.type === "registered") {
+        if (payload.type === "auth_required") {
+            setLoggedOutState();
+            return;
+        }
+
+        if (payload.type === "bootstrap") {
             currentUser = payload.currentUser || "";
             usernameEl.value = currentUser;
             rooms = payload.rooms || [];
             onlineUsers = payload.onlineUsers || [];
+            authNoteEl.textContent = "Logged in as " + currentUser;
             renderRooms();
             renderOnlineUsers();
             return;
@@ -426,8 +466,13 @@ function connect() {
                 rooms.unshift(payload.room);
             }
             renderRooms();
-            if (!activeRoomId) {
-                openRoom(payload.room.id);
+            if (pendingDirectUser && payload.room.type === "direct" && payload.room.participants.includes(pendingDirectUser)) {
+                pendingDirectUser = "";
+                activeRoomId = payload.room.id;
+                updateHeader();
+                renderRooms();
+                renderMessages();
+                sendSocket({ action: "open_room", roomId: payload.room.id });
             }
             return;
         }
@@ -454,8 +499,18 @@ function connect() {
     };
 
     socket.onclose = () => {
+        if (manualSocketClose) {
+            manualSocketClose = false;
+            return;
+        }
+
+        if (!currentUser) {
+            statusEl.innerText = "Login required";
+            return;
+        }
+
         statusEl.innerText = "Reconnecting...";
-        window.setTimeout(connect, 1500);
+        reconnectTimer = window.setTimeout(connect, 1500);
     };
 
     socket.onerror = () => {
@@ -463,29 +518,84 @@ function connect() {
     };
 }
 
+function setLoggedOutState() {
+    currentUser = "";
+    activeRoomId = "";
+    pendingDirectUser = "";
+    rooms = [];
+    onlineUsers = [];
+    Object.keys(roomMessages).forEach((key) => delete roomMessages[key]);
+    if (reconnectTimer) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+    }
+    if (socket) {
+        manualSocketClose = true;
+        socket.close();
+        socket = null;
+    }
+    renderRooms();
+    renderOnlineUsers();
+    renderMessages();
+    updateHeader();
+    statusEl.innerText = "Login required";
+}
+
+async function loginUser() {
+    try {
+        const data = await api("/api/auth/login", "POST", {
+            username: usernameEl.value.trim(),
+            password: passwordEl.value
+        });
+        currentUser = data.username;
+        passwordEl.value = "";
+        authNoteEl.textContent = "Logged in as " + currentUser;
+        connect();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function registerUser() {
+    try {
+        const data = await api("/api/auth/register", "POST", {
+            username: usernameEl.value.trim(),
+            password: passwordEl.value
+        });
+        currentUser = data.username;
+        passwordEl.value = "";
+        authNoteEl.textContent = "Account created for " + currentUser;
+        connect();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function logoutUser() {
+    try {
+        await api("/api/auth/logout", "POST");
+    } catch (error) {
+        alert(error.message);
+    }
+
+    usernameEl.value = "";
+    passwordEl.value = "";
+    authNoteEl.textContent = "Log in once, then click any live user to start chatting.";
+    setLoggedOutState();
+}
+
 function sendSocket(data) {
     if (!socket || socket.readyState !== WebSocket.OPEN) {
         alert("Chat is still connecting");
         return false;
     }
-
     socket.send(JSON.stringify(data));
     return true;
 }
 
-function claimUsername() {
-    const username = usernameEl.value.trim();
-    if (!username) {
-        alert("Enter a username");
-        return;
-    }
-
-    sendSocket({ action: "register", user: username });
-}
-
 function createRoom() {
     if (!currentUser) {
-        alert("Claim a username first");
+        alert("Log in first");
         return;
     }
 
@@ -493,7 +603,7 @@ function createRoom() {
     const participants = Array.from(participantsEl.selectedOptions).map((option) => option.value);
 
     if (!roomName) {
-        alert("Enter a chat name");
+        alert("Enter a group name");
         return;
     }
 
@@ -518,23 +628,28 @@ function openRoom(roomId) {
     sendSocket({ action: "open_room", roomId });
 }
 
+function openDirect(user) {
+    if (!currentUser) {
+        alert("Log in first");
+        return;
+    }
+    pendingDirectUser = user;
+    sendSocket({ action: "open_direct", targetUser: user });
+}
+
 function sendMessage() {
     const message = msgEl.value.trim();
-
     if (!currentUser) {
-        alert("Claim a username first");
+        alert("Log in first");
         return;
     }
-
     if (!activeRoomId) {
-        alert("Pick a chat first");
+        alert("Choose a chat first");
         return;
     }
-
     if (!message) {
         return;
     }
-
     if (sendSocket({ action: "send", roomId: activeRoomId, message })) {
         msgEl.value = "";
     }
@@ -542,9 +657,8 @@ function sendMessage() {
 
 function renderRooms() {
     roomsEl.innerHTML = "";
-
     if (!rooms.length) {
-        roomsEl.innerHTML = '<div class="empty-state">No chats yet. Claim a username or create one.</div>';
+        roomsEl.innerHTML = '<div class="empty-state">No chats yet. Click a live user to open one.</div>';
         return;
     }
 
@@ -554,7 +668,7 @@ function renderRooms() {
         button.className = "room-item" + (room.id === activeRoomId ? " active" : "");
         button.innerHTML = `
             <strong>${escapeHtml(room.name)}</strong>
-            <span class="room-meta">${room.type} · ${room.participants.length} members</span>
+            <span class="room-meta">${escapeHtml(room.type)} · ${room.participants.length} members</span>
         `;
         button.onclick = () => openRoom(room.id);
         roomsEl.appendChild(button);
@@ -565,18 +679,25 @@ function renderOnlineUsers() {
     onlineUsersEl.innerHTML = "";
     participantsEl.innerHTML = "";
 
-    onlineUsers.forEach((user) => {
-        const pill = document.createElement("span");
-        pill.className = "online-pill";
-        pill.innerHTML = `<span class="online-dot"></span>${escapeHtml(user)}`;
-        onlineUsersEl.appendChild(pill);
+    if (!onlineUsers.length) {
+        onlineUsersEl.innerHTML = '<div class="empty-state">No one is online right now.</div>';
+        return;
+    }
 
+    onlineUsers.forEach((user) => {
         if (user !== currentUser) {
             const option = document.createElement("option");
             option.value = user;
             option.textContent = user;
             participantsEl.appendChild(option);
         }
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "online-item";
+        button.innerHTML = `<span class="online-dot"></span><span>${escapeHtml(user)}</span>`;
+        button.onclick = () => openDirect(user);
+        onlineUsersEl.appendChild(button);
     });
 }
 
@@ -588,7 +709,7 @@ function renderMessages() {
         messagesEl.appendChild(emptyStateEl);
         emptyStateEl.textContent = activeRoomId
             ? "No messages here yet. Send the first secure message."
-            : "Pick a chat from the left or create a new one.";
+            : "Click a live user to open a direct chat.";
         return;
     }
 
@@ -609,11 +730,10 @@ function renderMessages() {
 function updateHeader() {
     const room = rooms.find((item) => item.id === activeRoomId);
     if (!room) {
-        roomTitleEl.textContent = "Pick a chat";
-        roomSubtitleEl.textContent = "Claim a username to start secure messaging.";
+        roomTitleEl.textContent = "Choose a chat";
+        roomSubtitleEl.textContent = "Click a live user to open a direct chat, or create a group.";
         return;
     }
-
     roomTitleEl.textContent = room.name;
     roomSubtitleEl.textContent = room.participants.join(", ");
 }
@@ -622,12 +742,10 @@ function formatTimestamp(value) {
     if (!value) {
         return "";
     }
-
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
         return value;
     }
-
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
@@ -640,7 +758,9 @@ function escapeHtml(value) {
         .replaceAll("'", "&#39;");
 }
 
-claimBtn.addEventListener("click", claimUsername);
+loginBtn.addEventListener("click", loginUser);
+registerBtn.addEventListener("click", registerUser);
+logoutBtn.addEventListener("click", logoutUser);
 createRoomBtn.addEventListener("click", createRoom);
 generalBtn.addEventListener("click", () => openRoom("general"));
 sendBtn.addEventListener("click", sendMessage);
@@ -649,13 +769,13 @@ msgEl.addEventListener("keydown", (event) => {
         sendMessage();
     }
 });
-usernameEl.addEventListener("keydown", (event) => {
+passwordEl.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
-        claimUsername();
+        loginUser();
     }
 });
 
-connect();
+restoreSession();
 </script>
 </body>
 </html>
